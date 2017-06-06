@@ -18,11 +18,17 @@ COORDINATOR=${HOSTS%% *}
 PRESTO_INSTALL_URL=https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.177/presto-server-0.177.tar.gz
 INSTALL_FILE=${PRESTO_INSTALL_URL##*//*/}
 INSTALL_DIR=${INSTALL_FILE%.*.*}
-DATA_DIR=/var/presto/data
+PRESTO_DIR=/var/presto
+DATA_DIR=$PRESTO_DIR/data
 for h in $HOSTS
 do
 	echo Installing on $h ... 
 	SSH="ssh -i $KEYFILE $USER@$h"
+	$SSH test -d $PRESTO_DIR
+        if [ $? -ne 0 ]; then
+		$SSH sudo mkdir $PRESTO_DIR
+		$SSH sudo chmod 777 $PRESTO_DIR
+	fi
 	$SSH "rm -rf $INSTALL_DIR; rm -rf ${DATA_DIR}*"
 	$SSH "wget -q $PRESTO_INSTALL_URL"
 	$SSH "tar zxf $INSTALL_FILE"
@@ -50,7 +56,7 @@ done
 
 #$SSH "mkdir ${DATA_DIR}"
 NODE_ID=`uuidgen`
-SSH="ssh -i $KEYFILE $USER@COORDINATOR"
+SSH="ssh -i $KEYFILE $USER@$COORDINATOR"
 $SSH sed -i -e "s/node.id=/node.id=$NODE_ID/g" $INSTALL_DIR/etc/node.properties
 $SSH cp $INSTALL_DIR/etc/config.properties.coordinator $INSTALL_DIR/etc/config.properties
 $SSH sed -i  "s/redis.nodes=/redis.nodes=$REDIS_CONN/g" $INSTALL_DIR/etc/catalog/redis.properties

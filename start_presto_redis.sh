@@ -29,5 +29,6 @@ do
 done
 
 echo Starting coordinator ...
+SSH="ssh -i $KEYFILE $USER@$COORDINATOR"
 $SSH $INSTALL_DIR/bin/launcher start
 
